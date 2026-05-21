@@ -75,6 +75,13 @@ EXPERIMENTS = [
      lambda: SACConfig(total_steps=15_000, eval_every=1_500),
      "MountainCarContinuous-v0"),
 
+    ("SAC_fixed_alpha", train_sac,
+     lambda: SACConfig(total_steps=12_000, eval_every=1_000, fixed_alpha=0.2),
+     "Pendulum-v1"),
+    ("SAC_fixed_alpha", train_sac,
+     lambda: SACConfig(total_steps=15_000, eval_every=1_500, fixed_alpha=0.2),
+     "MountainCarContinuous-v0"),
+
     ("TD3", train_td3,
      lambda: TD3Config(total_steps=12_000, eval_every=1_000),
      "Pendulum-v1"),

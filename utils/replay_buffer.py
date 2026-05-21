@@ -41,10 +41,7 @@ class ReplayBuffer:
             rewards=torch.as_tensor(self.rewards[idx], device=self.device),
             dones=torch.as_tensor(self.dones[idx], device=self.device),
         )
-        if self.discrete_actions:
-            batch["actions"] = torch.as_tensor(self.actions[idx], device=self.device)
-        else:
-            batch["actions"] = torch.as_tensor(self.actions[idx], device=self.device)
+        batch["actions"] = torch.as_tensor(self.actions[idx], device=self.device)
         return batch
 
     def __len__(self):
