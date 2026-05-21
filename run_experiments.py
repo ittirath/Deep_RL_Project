@@ -2,10 +2,15 @@
 
 Each (algorithm, env) pair is averaged over `N_SEEDS` random seeds.
 Results are saved to results/<algo>_<env>_seed<seed>.pkl.
+
+Experiment design principle
+---------------------------
+All algorithms evaluated on the same environment use the same total_steps so
+comparisons reflect algorithmic differences, not training-budget differences.
+Eval frequency is calibrated per env to produce ~15 data points per curve.
 """
 from __future__ import annotations
 
-import os
 import pickle
 import sys
 import time
@@ -26,8 +31,10 @@ N_SEEDS = 3
 SEEDS = [0, 1, 2]
 
 
-def save_result(result: dict):
-    name = f"{result['algorithm']}_{result['env']}_seed{result['seed']}.pkl"
+def save_result(result: dict, label: str):
+    # Use the experiment label (not result['algorithm']) so that variants like
+    # SAC_fixed_alpha get their own files instead of overwriting SAC results.
+    name = f"{label}_{result['env']}_seed{result['seed']}.pkl"
     path = RESULTS_DIR / name
     with open(path, "wb") as f:
         pickle.dump(result, f)
@@ -38,58 +45,83 @@ def already_done(algo: str, env: str, seed: int) -> bool:
     return (RESULTS_DIR / f"{algo}_{env}_seed{seed}.pkl").exists()
 
 
-# -------------------- Experiment table --------------------
+# -----------------------------------------------------------------------
+# Experiment table
+# Each entry: (label, train_fn, config_factory, env_name)
+#
+# Environments and their step budgets:
+#   CartPole-v1            30 000  — DQN vs PPO
+#   Acrobot-v1             50 000  — DQN vs PPO
+#   MountainCar-v0         40 000  — DQN only (discrete; documented hard-exploration case)
+#   Pendulum-v1            30 000  — PPO vs SAC vs SAC_fixed_alpha vs TD3
+#   MountainCarContinuous  30 000  — SAC vs SAC_fixed_alpha vs TD3
+# -----------------------------------------------------------------------
 EXPERIMENTS = [
-    # (label, algorithm fn, config, env_name, steps)
-    ("DQN", train_dqn,
-     lambda: DQNConfig(total_steps=15_000, eps_decay_steps=8_000,
-                       eval_every=1_000, target_update_every=500),
-     "CartPole-v1"),
+
+    # ---- CartPole-v1 — 30 000 steps (DQN vs PPO) -------------------------
     ("DQN", train_dqn,
      lambda: DQNConfig(total_steps=30_000, eps_decay_steps=15_000,
                        eval_every=2_000, target_update_every=500),
+     "CartPole-v1"),
+
+    ("PPO", train_ppo,
+     lambda: PPOConfig(total_steps=30_000, steps_per_rollout=1_024,
+                       eval_every_rollouts=2),          # eval every ~2 048 steps
+     "CartPole-v1"),
+
+    # ---- Acrobot-v1 — 50 000 steps (DQN vs PPO) --------------------------
+    ("DQN", train_dqn,
+     lambda: DQNConfig(total_steps=50_000, eps_decay_steps=25_000,
+                       eval_every=3_000, target_update_every=500),
      "Acrobot-v1"),
+
+    ("PPO", train_ppo,
+     lambda: PPOConfig(total_steps=50_000, steps_per_rollout=2_048,
+                       eval_every_rollouts=2,           # eval every ~4 096 steps
+                       ent_coef=0.02),                  # needed to escape -500 floor
+     "Acrobot-v1"),
+
+    # ---- MountainCar-v0 — 40 000 steps (DQN only) ------------------------
     ("DQN", train_dqn,
      lambda: DQNConfig(total_steps=40_000, eps_decay_steps=20_000,
                        eps_end=0.1, eval_every=2_500,
-                       target_update_every=1000),
+                       target_update_every=1_000),
      "MountainCar-v0"),
 
+    # ---- Pendulum-v1 — 30 000 steps (PPO vs SAC vs SAC_fixed_alpha vs TD3)
     ("PPO", train_ppo,
-     lambda: PPOConfig(total_steps=30_000, steps_per_rollout=1024,
-                       eval_every_rollouts=2),
-     "CartPole-v1"),
-    ("PPO", train_ppo,
-     lambda: PPOConfig(total_steps=50_000, steps_per_rollout=2048,
-                       eval_every_rollouts=2),
-     "Acrobot-v1"),
-    ("PPO", train_ppo,
-     lambda: PPOConfig(total_steps=60_000, steps_per_rollout=2048,
-                       eval_every_rollouts=2),
+     lambda: PPOConfig(total_steps=30_000, steps_per_rollout=1_024,
+                       eval_every_rollouts=2,           # eval every ~2 048 steps
+                       gamma=0.9,                       # critical: 0.99 fails on Pendulum
+                       lr_pi=1e-3, lr_v=1e-3),
      "Pendulum-v1"),
 
     ("SAC", train_sac,
-     lambda: SACConfig(total_steps=12_000, eval_every=1_000),
+     lambda: SACConfig(total_steps=30_000, eval_every=2_000),
      "Pendulum-v1"),
+
+    ("SAC_fixed_alpha", train_sac,
+     lambda: SACConfig(total_steps=30_000, eval_every=2_000, fixed_alpha=0.2),
+     "Pendulum-v1"),
+
+    ("TD3", train_td3,
+     lambda: TD3Config(total_steps=30_000, eval_every=2_000),
+     "Pendulum-v1"),
+
+    # ---- MountainCarContinuous-v0 — 30 000 steps (SAC vs SAC_fixed_alpha vs TD3)
     ("SAC", train_sac,
-     lambda: SACConfig(total_steps=15_000, eval_every=1_500),
+     lambda: SACConfig(total_steps=30_000, eval_every=2_000),
      "MountainCarContinuous-v0"),
 
     ("SAC_fixed_alpha", train_sac,
-     lambda: SACConfig(total_steps=12_000, eval_every=1_000, fixed_alpha=0.2),
-     "Pendulum-v1"),
-    ("SAC_fixed_alpha", train_sac,
-     lambda: SACConfig(total_steps=15_000, eval_every=1_500, fixed_alpha=0.2),
+     lambda: SACConfig(total_steps=30_000, eval_every=2_000, fixed_alpha=0.2),
      "MountainCarContinuous-v0"),
 
     ("TD3", train_td3,
-     lambda: TD3Config(total_steps=12_000, eval_every=1_000),
-     "Pendulum-v1"),
-    ("TD3", train_td3,
-     lambda: TD3Config(total_steps=15_000, eval_every=1_500),
+     lambda: TD3Config(total_steps=30_000, eval_every=2_000),
      "MountainCarContinuous-v0"),
 ]
-  
+
 
 def main():
     overall_start = time.time()
@@ -100,11 +132,12 @@ def main():
                 continue
             cfg = make_cfg()
             t0 = time.time()
-            print(f"[run] {label} on {env_name} seed={seed} ...")
+            print(f"[run]  {label} on {env_name} seed={seed} ...")
             result = train_fn(env_name, seed=seed, cfg=cfg)
             dt = time.time() - t0
-            print(f"       done in {dt:.1f}s, final eval = {result['eval_returns'][-1]:.2f}")
-            save_result(result)
+            print(f"       done in {dt:.1f}s, "
+                  f"final eval = {result['eval_returns'][-1]:.2f}")
+            save_result(result, label)
     print(f"\nAll done in {time.time() - overall_start:.1f}s.")
 
 

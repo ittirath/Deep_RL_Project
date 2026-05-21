@@ -47,7 +47,7 @@ class TD3Config:
     noise_clip: float = 0.5
     eval_every: int = 2_000
     eval_episodes: int = 5
-    device: str = "cpu"
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def train_td3(env_name: str, seed: int, cfg: TD3Config):

@@ -44,7 +44,7 @@ class DQNConfig:
     eval_every: int = 2_000
     eval_episodes: int = 10
     grad_clip: float = 10.0
-    device: str = "cpu"
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def train_dqn(env_name: str, seed: int, cfg: DQNConfig):
