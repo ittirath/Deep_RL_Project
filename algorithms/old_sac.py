@@ -1,13 +1,20 @@
 """SAC — Haarnoja et al. (2018) "Soft Actor-Critic".
 
-Supports both:
-- Auto-tuned alpha (Haarnoja 2018b, default): set fixed_alpha=None.
-- Fixed alpha (Haarnoja 2018a): pass fixed_alpha=0.2 (or any positive float).
+Implementation notes / lessons learned:
+- Automatic entropy temperature (α) tuning is what really makes SAC robust.
+  The target entropy is set to -act_dim (recommended in the paper).
+- Twin Q-networks + min(Q1, Q2) for the target is essential to avoid
+  overestimation, exactly like TD3.
+- Polyak averaging of the target Q-nets with τ = 0.005 works well across all
+  the continuous-control tasks here.
+- The squashed-Gaussian log-prob correction term is easy to get wrong — using
+  the stable form `2 * (log 2 - u - softplus(-2u))` (Stable-Baselines style)
+  avoids numerical issues compared to `log(1 - tanh(u)^2)`.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List
 
 import gymnasium as gym
 import numpy as np
@@ -32,8 +39,7 @@ class SACConfig:
     warmup_steps: int = 1_000
     train_every: int = 1
     updates_per_step: int = 1
-    target_entropy: float = None      # default: -act_dim (only used when fixed_alpha is None)
-    fixed_alpha: Optional[float] = None  # 2018a behaviour when set; 2018b auto-tuning when None
+    target_entropy: float = None  # default: -act_dim
     eval_every: int = 2_000
     eval_episodes: int = 5
     device: str = "cpu"
@@ -61,20 +67,10 @@ def train_sac(env_name: str, seed: int, cfg: SACConfig):
     optim_pi = optim.Adam(actor.parameters(), lr=cfg.lr)
     optim_q = optim.Adam(list(q1.parameters()) + list(q2.parameters()), lr=cfg.lr)
 
-    # ----- Temperature setup -----
-    auto_alpha = cfg.fixed_alpha is None
-    if auto_alpha:
-        # 2018b: learn log_alpha to satisfy entropy constraint.
-        target_entropy = -float(act_dim) if cfg.target_entropy is None else cfg.target_entropy
-        log_alpha = torch.zeros(1, requires_grad=True, device=cfg.device)
-        optim_alpha = optim.Adam([log_alpha], lr=cfg.lr)
-    else:
-        # 2018a: fixed alpha. Store log_alpha as a non-trainable tensor so the
-        # same .exp() interface works downstream without branching.
-        log_alpha = torch.log(torch.tensor(float(cfg.fixed_alpha), device=cfg.device))
-        log_alpha.requires_grad_(False)
-        optim_alpha = None
-        target_entropy = None  # unused
+    # Automatic temperature tuning.
+    target_entropy = -float(act_dim) if cfg.target_entropy is None else cfg.target_entropy
+    log_alpha = torch.zeros(1, requires_grad=True, device=cfg.device)
+    optim_alpha = optim.Adam([log_alpha], lr=cfg.lr)
 
     buffer = ReplayBuffer(obs_dim, act_dim, cfg.buffer_size, cfg.device)
 
@@ -96,6 +92,8 @@ def train_sac(env_name: str, seed: int, cfg: SACConfig):
             action = a.squeeze(0).cpu().numpy()
 
         next_obs, r, done, truncated, _ = env.step(action)
+        # Pendulum has no terminal state — done is always 0, only truncated;
+        # this means we always bootstrap, which is the correct behaviour.
         buffer.add(obs, action, r, next_obs, float(done))
         episode_return += r
         obs = next_obs
@@ -138,12 +136,11 @@ def train_sac(env_name: str, seed: int, cfg: SACConfig):
                 pi_loss.backward()
                 optim_pi.step()
 
-                # ----- alpha update (skipped in 2018a / fixed-alpha mode) -----
-                if auto_alpha:
-                    alpha_loss = -(log_alpha * (logp_new.detach() + target_entropy)).mean()
-                    optim_alpha.zero_grad()
-                    alpha_loss.backward()
-                    optim_alpha.step()
+                # ----- α update -----
+                alpha_loss = -(log_alpha * (logp_new.detach() + target_entropy)).mean()
+                optim_alpha.zero_grad()
+                alpha_loss.backward()
+                optim_alpha.step()
 
                 # ----- Target soft update -----
                 with torch.no_grad():
