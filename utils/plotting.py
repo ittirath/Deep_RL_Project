@@ -25,10 +25,11 @@ import numpy as np
 
 RESULTS_DIR = Path(__file__).parent.parent / "results"
 ALGO_COLORS = {
-    "DQN": "#d62728",
-    "PPO": "#1f77b4",
-    "SAC": "#2ca02c",
-    "TD3": "#9467bd",
+    "DQN":             "#d62728",
+    "PPO":             "#1f77b4",
+    "SAC":             "#2ca02c",
+    "SAC_fixed_alpha": "#17becf",
+    "TD3":             "#9467bd",
 }
 
 

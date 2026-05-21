@@ -44,7 +44,7 @@ class PPOConfig:
     hidden: tuple = (64, 64)
     eval_every_rollouts: int = 5
     eval_episodes: int = 5
-    device: str = "cpu"
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
     target_kl: float = 0.02  # early-stop on KL divergence
 
 

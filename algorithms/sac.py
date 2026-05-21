@@ -36,7 +36,7 @@ class SACConfig:
     fixed_alpha: Optional[float] = None  # 2018a behaviour when set; 2018b auto-tuning when None
     eval_every: int = 2_000
     eval_episodes: int = 5
-    device: str = "cpu"
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def train_sac(env_name: str, seed: int, cfg: SACConfig):
