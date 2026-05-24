@@ -25,11 +25,15 @@ import numpy as np
 
 RESULTS_DIR = Path(__file__).parent.parent / "results"
 ALGO_COLORS = {
-    "DQN":             "#d62728",
-    "PPO":             "#1f77b4",
-    "SAC":             "#2ca02c",
-    "SAC_fixed_alpha": "#17becf",
-    "TD3":             "#9467bd",
+    "DQN":                 "#d62728",
+    "PPO":                 "#1f77b4",
+    "SAC":                 "#2ca02c",
+    # Fixed-alpha variants: cool→warm as alpha increases
+    "SAC_fixed_alpha_005": "#aec7e8",  # α=0.05 — light blue (under-explores)
+    "SAC_fixed_alpha":     "#17becf",  # α=0.20 — teal   (good default)
+    "SAC_fixed_alpha_050": "#ff7f0e",  # α=0.50 — orange  (over-explores)
+    "SAC_fixed_alpha_100": "#d62728",  # α=1.00 — red    (too random)
+    "TD3":                 "#9467bd",
 }
 
 
