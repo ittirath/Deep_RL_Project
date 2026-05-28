@@ -58,89 +58,93 @@ def already_done(algo: str, env: str, seed: int) -> bool:
 # -----------------------------------------------------------------------
 EXPERIMENTS = [
 
-    # ---- CartPole-v1 — 30 000 steps (DQN vs PPO) -------------------------
-    ("DQN", train_dqn,
-     lambda: DQNConfig(total_steps=30_000, eps_decay_steps=15_000,
-                       eval_every=2_000, target_update_every=500),
-     "CartPole-v1"),
+    # # ---- CartPole-v1 — 30 000 steps (DQN vs PPO) -------------------------
+    # ("DQN", train_dqn,
+    #  lambda: DQNConfig(total_steps=30_000, eps_decay_steps=15_000,
+    #                    eval_every=2_000, target_update_every=500),
+    #  "CartPole-v1"),
 
-    ("PPO", train_ppo,
-     lambda: PPOConfig(total_steps=30_000, steps_per_rollout=1_024,
-                       eval_every_rollouts=2),
-     "CartPole-v1"),
+    # ("PPO", train_ppo,
+    #  lambda: PPOConfig(total_steps=30_000, steps_per_rollout=1_024,
+    #                    eval_every_rollouts=2),
+    #  "CartPole-v1"),
 
-    # ---- Acrobot-v1 — 50 000 steps (DQN vs PPO) --------------------------
-    ("DQN", train_dqn,
-     lambda: DQNConfig(total_steps=50_000, eps_decay_steps=25_000,
-                       eval_every=3_000, target_update_every=500),
-     "Acrobot-v1"),
+    # # ---- Acrobot-v1 — 50 000 steps (DQN vs PPO) --------------------------
+    # ("DQN", train_dqn,
+    #  lambda: DQNConfig(total_steps=50_000, eps_decay_steps=25_000,
+    #                    eval_every=3_000, target_update_every=500),
+    #  "Acrobot-v1"),
 
-    ("PPO", train_ppo,
-     lambda: PPOConfig(total_steps=50_000, steps_per_rollout=2_048,
-                       eval_every_rollouts=2, ent_coef=0.02),
-     "Acrobot-v1"),
+    # ("PPO", train_ppo,
+    #  lambda: PPOConfig(total_steps=50_000, steps_per_rollout=2_048,
+    #                    eval_every_rollouts=2, ent_coef=0.02),
+    #  "Acrobot-v1"),
 
-    # ---- MountainCar-v0 — 40 000 steps (DQN vs PPO) ------------------------
-    ("DQN", train_dqn,
-     lambda: DQNConfig(total_steps=40_000, eps_decay_steps=20_000,
-                       eps_end=0.1, eval_every=2_500,
-                       target_update_every=1_000),
-     "MountainCar-v0"),
-    ("PPO", train_ppo,
-    lambda: PPOConfig(total_steps=40_000, steps_per_rollout=2_048,
-                    eval_every_rollouts=2, ent_coef=0.02),
-    "MountainCar-v0"),
+    # # ---- MountainCar-v0 — 40 000 steps (DQN vs PPO) ------------------------
+    # ("DQN", train_dqn,
+    #  lambda: DQNConfig(total_steps=40_000, eps_decay_steps=20_000,
+    #                    eps_end=0.1, eval_every=2_500,
+    #                    target_update_every=1_000),
+    #  "MountainCar-v0"),
+    # ("PPO", train_ppo,
+    # lambda: PPOConfig(total_steps=40_000, steps_per_rollout=2_048,
+    #                 eval_every_rollouts=2, ent_coef=0.02),
+    # "MountainCar-v0"),
 
-    # ---- Pendulum-v1 — 30 000 steps (PPO vs SAC vs SAC_fixed_alpha vs TD3)
-    ("PPO", train_ppo,
-     lambda: PPOConfig(total_steps=30_000, steps_per_rollout=1_024,
-                       eval_every_rollouts=2, gamma=0.9, lr_pi=1e-3, lr_v=1e-3),
-     "Pendulum-v1"),
+    # # ---- Pendulum-v1 — 30 000 steps (PPO vs SAC vs SAC_fixed_alpha vs TD3)
+    # ("PPO", train_ppo,
+    #  lambda: PPOConfig(total_steps=30_000, steps_per_rollout=1_024,
+    #                    eval_every_rollouts=2, gamma=0.9, lr_pi=1e-3, lr_v=1e-3),
+    #  "Pendulum-v1"),
 
-    ("SAC", train_sac,
-     lambda: SACConfig(total_steps=30_000, eval_every=2_000),
-     "Pendulum-v1"),
+    # ("SAC", train_sac,
+    #  lambda: SACConfig(total_steps=30_000, eval_every=2_000),
+    #  "Pendulum-v1"),
 
-    ("SAC_fixed_alpha", train_sac,
-     lambda: SACConfig(total_steps=30_000, eval_every=2_000, fixed_alpha=0.2),
-     "Pendulum-v1"),
+    # ("SAC_fixed_alpha", train_sac,
+    #  lambda: SACConfig(total_steps=30_000, eval_every=2_000, fixed_alpha=0.2),
+    #  "Pendulum-v1"),
 
-    ("TD3", train_td3,
-     lambda: TD3Config(total_steps=30_000, eval_every=2_000),
-     "Pendulum-v1"),
+    # ("TD3", train_td3,
+    #  lambda: TD3Config(total_steps=30_000, eval_every=2_000),
+    #  "Pendulum-v1"),
 
-    # ---- MountainCarContinuous-v0 — 30 000 steps (SAC vs SAC_fixed_alpha vs TD3)
-    ("PPO", train_ppo,
-    lambda: PPOConfig(total_steps=30_000, steps_per_rollout=2_048,
-                    eval_every_rollouts=2, ent_coef=0.02),
-    "MountainCarContinuous-v0"),
+    # # ---- MountainCarContinuous-v0 — 30 000 steps (SAC vs SAC_fixed_alpha vs TD3)
+    # ("PPO", train_ppo,
+    # lambda: PPOConfig(total_steps=30_000, steps_per_rollout=2_048,
+    #                 eval_every_rollouts=2, ent_coef=0.02),
+    # "MountainCarContinuous-v0"),
 
-    ("SAC", train_sac,
-     lambda: SACConfig(total_steps=30_000, eval_every=2_000),
-     "MountainCarContinuous-v0"),
+    # ("SAC", train_sac,
+    #  lambda: SACConfig(total_steps=30_000, eval_every=2_000),
+    #  "MountainCarContinuous-v0"),
 
-    ("SAC_fixed_alpha", train_sac,
-     lambda: SACConfig(total_steps=30_000, eval_every=2_000, fixed_alpha=0.2),
-     "MountainCarContinuous-v0"),
+    # ("SAC_fixed_alpha", train_sac,
+    #  lambda: SACConfig(total_steps=30_000, eval_every=2_000, fixed_alpha=0.2),
+    #  "MountainCarContinuous-v0"),
 
-    ("TD3", train_td3,
-     lambda: TD3Config(total_steps=30_000, eval_every=2_000),
-     "MountainCarContinuous-v0"),
+    # ("TD3", train_td3,
+    #  lambda: TD3Config(total_steps=30_000, eval_every=2_000),
+    #  "MountainCarContinuous-v0"),
 
-    # ---- SAC fixed-α sweep on Pendulum-v1 — NEW --------------------------
-    # Same budget as the existing runs for a fair comparison.
-    # To re-run all experiments above, uncomment those blocks.
-    ("SAC_fixed_alpha_005", train_sac,
-     lambda: SACConfig(total_steps=30_000, eval_every=2_000, fixed_alpha=0.05),
-     "Pendulum-v1"),
+    # # ---- SAC fixed-α sweep on Pendulum-v1 — NEW --------------------------
+    # # Same budget as the existing runs for a fair comparison.
+    # # To re-run all experiments above, uncomment those blocks.
+    # ("SAC_fixed_alpha_005", train_sac,
+    #  lambda: SACConfig(total_steps=30_000, eval_every=2_000, fixed_alpha=0.05),
+    #  "Pendulum-v1"),
 
-    ("SAC_fixed_alpha_050", train_sac,
-     lambda: SACConfig(total_steps=30_000, eval_every=2_000, fixed_alpha=0.5),
-     "Pendulum-v1"),
+    # ("SAC_fixed_alpha_050", train_sac,
+    #  lambda: SACConfig(total_steps=30_000, eval_every=2_000, fixed_alpha=0.5),
+    #  "Pendulum-v1"),
 
-    ("SAC_fixed_alpha_100", train_sac,
+    # ("SAC_fixed_alpha_100", train_sac,
+    #  lambda: SACConfig(total_steps=30_000, eval_every=2_000, fixed_alpha=1.0),
+    #  "Pendulum-v1"),
+
+     ("SAC_fixed_alpha_100", train_sac,
      lambda: SACConfig(total_steps=30_000, eval_every=2_000, fixed_alpha=1.0),
-     "Pendulum-v1"),
+     "MountainCarContinuous-v0"),
 ]
 
 
